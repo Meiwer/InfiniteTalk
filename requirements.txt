@@ -1,21 +1,40 @@
-opencv-python>=4.9.0.80
-diffusers>=0.31.0
-transformers>=4.49.0
-tokenizers>=0.20.3
+# Core ML (install separately with --index-url https://download.pytorch.org/whl/cu128)
+# torch>=2.11.0
+# torchvision
+# torchaudio
+# xformers (install with same --index-url)
+# flash-attn (install with --no-build-isolation)
+
+# Diffusion / Transformers (pinned for compatibility)
+diffusers==0.33.0
+transformers==4.49.0
+tokenizers>=0.20.3,<0.22
 accelerate>=1.1.1
-tqdm
-imageio
-easydict
-ftfy
-dashscope
-imageio-ffmpeg
-scikit-image   
-loguru
-gradio>=5.0.0
-numpy>=1.23.5,<2
+optimum-quanto>=0.2.7
 xfuser>=0.4.1
+
+# Audio
+librosa>=0.10.0
+soundfile
 pyloudnorm
-optimum-quanto==0.2.6
+misaki[en]
+
+# Video / Image
+opencv-python>=4.9.0.80
+imageio
+imageio-ffmpeg
+scikit-image
 scenedetect
 moviepy==1.0.3
 decord
+
+# General
+numpy>=1.23.5,<2
+tqdm
+easydict
+ftfy
+loguru
+ninja
+wheel
+gradio>=5.0.0
+dashscope
