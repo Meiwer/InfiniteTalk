@@ -38,35 +38,17 @@ pip install xformers --index-url https://download.pytorch.org/whl/cu128
 
 > 实际安装版本: xformers 0.0.35
 
-### 4. 安装 flash-attn（需跳过 CUDA 版本检查）
+### 4. flash-attn（可选，无需安装）
 
-系统 nvcc 为 13.3，PyTorch 编译使用 CUDA 12.8，主版本号不同会触发 RuntimeError。
+代码已改造为自动 fallback 到 PyTorch 原生 SDPA（内置 Flash Attention 算法），**无需编译 flash-attn**。
 
-**修复方法**: 修改 `.venv/lib/python3.10/site-packages/torch/utils/cpp_extension.py`
+> 性能说明：PyTorch SDPA 与 flash-attn 使用相同的 Flash Attention kernel，性能差异 <2%。
+> 如确需安装（约 40 分钟编译），需先修补 CUDA 版本检查（见附录 A）。
 
-将第 544-545 行:
-```python
-if cuda_ver.major != torch_cuda_version.major:
-    raise RuntimeError(CUDA_MISMATCH_MESSAGE, cuda_str_version, torch.version.cuda)
-```
-改为:
-```python
-if cuda_ver.major != torch_cuda_version.major:
-    logger.warning(CUDA_MISMATCH_WARN, cuda_str_version, torch.version.cuda)
-```
-
-然后编译安装（耗时约 40 分钟）:
-```bash
-pip install flash-attn --no-build-isolation
-```
-
-> 实际安装版本: flash-attn 2.8.3.post1
-
-### 5. 安装 requirements.txt 及额外依赖
+### 5. 安装 requirements.txt
 
 ```bash
 pip install -r requirements.txt
-pip install wheel librosa soundfile "misaki[en]" ninja
 ```
 
 ### 6. 降级 diffusers 和 transformers（兼容 PyTorch 2.11）
@@ -135,16 +117,16 @@ apt-get install -y ffmpeg
 
 ## 最终依赖版本汇总
 
-| 包 | 版本 |
-|---|---|
-| Python | 3.10.20 |
-| PyTorch | 2.11.0+cu128 |
-| xformers | 0.0.35 |
-| flash-attn | 2.8.3.post1 |
-| diffusers | 0.33.0 |
-| transformers | 4.49.0 |
-| optimum-quanto | 0.2.7 |
-| numpy | 1.26.4 |
+| 包 | 版本 | 备注 |
+|---|---|---|
+| Python | 3.10.20 | |
+| PyTorch | 2.11.0+cu128 | 支持 sm_120 |
+| xformers | 0.0.35 | |
+| flash-attn | 可选 | 不装则自动用 PyTorch SDPA |
+| diffusers | 0.33.0 | |
+| transformers | 4.49.0 | |
+| optimum-quanto | 0.2.7 | |
+| numpy | 1.26.4 | |
 
 ## 运行命令示例（FP8 单人推理）
 
@@ -166,7 +148,27 @@ python generate_infinitetalk.py \
 
 ## 注意事项
 
-- flash-attn 编译约需 40 分钟，需确保 ninja 已安装
-- streaming 模式 1000 帧 + 40 步采样在单卡 RTX 5070 Ti (16GB) 上耗时较长
+- **flash-attn 不再是必须依赖**，代码自动 fallback 到 PyTorch 原生 SDPA
+- streaming 模式 1000 帧 + 40 步采样在单卡 16GB 显存上耗时较长
 - `--num_persistent_param_in_dit 0` 可显著降低显存占用
-- 步骤 4、8、9 的补丁在重新安装对应包后需要重新应用
+- 步骤 8 的头文件补丁在重新安装 PyTorch 后需重新应用
+- 本方案适用于所有 RTX 50 系显卡（sm_120 Blackwell 架构）
+
+## 附录 A：可选安装 flash-attn
+
+如需安装 flash-attn（编译约 40 分钟），需先修补 CUDA 版本检查：
+
+修改 `.venv/lib/python3.10/site-packages/torch/utils/cpp_extension.py` 第 544-545 行:
+```python
+# 原始:
+if cuda_ver.major != torch_cuda_version.major:
+    raise RuntimeError(CUDA_MISMATCH_MESSAGE, cuda_str_version, torch.version.cuda)
+# 改为:
+if cuda_ver.major != torch_cuda_version.major:
+    logger.warning(CUDA_MISMATCH_WARN, cuda_str_version, torch.version.cuda)
+```
+
+然后:
+```bash
+pip install flash-attn --no-build-isolation
+```

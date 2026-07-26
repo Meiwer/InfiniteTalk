@@ -3,7 +3,9 @@
 # torchvision
 # torchaudio
 # xformers (install with same --index-url)
-# flash-attn (install with --no-build-isolation)
+#
+# Optional (not required, code auto-fallback to PyTorch native SDPA):
+# flash-attn (requires ~40min compilation, install with --no-build-isolation)
 
 # Diffusion / Transformers (pinned for compatibility)
 diffusers==0.33.0
